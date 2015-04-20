@@ -140,8 +140,8 @@
 
   <!-- Mono compatibility, conditional builds -->
 
-  <PropertyGroup Condition=" '$(PropUsingMono)' == 'true'">
-    <_DisabledWarnings>$(NoWarn)</_DisabledWarnings>
+  <PropertyGroup Condition="'$(PropUsingMono)' == 'true'">
+    <DisabledWarnings>$(NoWarn)</DisabledWarnings>
   </PropertyGroup>
 
   <Target Name="Build" Condition="'$(PropBuildWinRT)' == 'true'">
@@ -158,10 +158,8 @@
     <Message Text="Not building anything in $(MSBuildProjectName) because using Mono." />
   </Target>
 
-  <PropertyGroup Condition=" '$(PropBuildWinRT)' == 'true'">
-    <!-- Microsoft Windows 8 CSharp targets -->
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  </PropertyGroup>
+  <!-- Microsoft Windows 8 CSharp targets -->
+  <Import Condition="'$(PropBuildWinRT)' == 'true'" Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
 
   <!-- Custom BeforeBuild-->
   <Target Name="BeforeBuild" DependsOnTargets="GenerateApi; Detokenize" />

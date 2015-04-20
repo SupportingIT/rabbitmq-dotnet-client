@@ -149,11 +149,9 @@
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '11.0' ">
     <VisualStudioVersion>11.0</VisualStudioVersion>
   </PropertyGroup>
-  
-  <PropertyGroup Condition=" '$(PropBuildWinRT)' == 'true'">
-    <!-- Microsoft Windows 8 CSharp targets -->
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  </PropertyGroup>
+
+  <!-- Microsoft Windows 8 CSharp targets -->
+  <Import Condition=" '$(PropBuildWinRT)' == 'true'" Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
 
   <Target Name="Build" Condition="'$(PropBuildWinRT)' == 'true'">
     <Message Text="Not building anything in $(MSBuildProjectName) because using Mono." />
