@@ -5,8 +5,9 @@
     <PropUsingMono>@USINGMONO@</PropUsingMono>
     <PropLaunchExe Condition="'$(PropUsingMono)' == 'true'">mono </PropLaunchExe>
     <PropBuildWcf Condition="'$(PropUsingMono)' != 'true'">true</PropBuildWcf>
+    <!-- Disable WinRT builds until we upgrade our infra to Windows 8.1 -->
+    <PropBuildWinRT>false</PropBuildWinRT>
     <PropAssemblyVersion>@VERSION@</PropAssemblyVersion>
     <PropKeyfile>$(MSBuildProjectDirectory)\..\..\..\@KEYFILE@</PropKeyfile>
   </PropertyGroup>
 </Project>
-
