@@ -87,4 +87,16 @@ Backup*/
 UpgradeLog*.XML
 UpgradeLog*.htm
 
-projects/client/Unit/TestResult.xml
+# Unit tests
+
+projects/client/Unit*/TestResult.xml
+
+# Development scripts
+
+*.fsx
+*.pcap
+
+# Vim
+.sw?
+.*.sw?
+rabbit.snk

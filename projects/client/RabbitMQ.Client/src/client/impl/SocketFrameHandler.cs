@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (c) 2007-2016 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -34,37 +34,39 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is Pivotal Software, Inc.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
+using RabbitMQ.Client.Exceptions;
+using RabbitMQ.Util;
 using System;
 using System.IO;
 using System.Net;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
-using RabbitMQ.Client.Exceptions;
-using RabbitMQ.Util;
 
 namespace RabbitMQ.Client.Impl
 {
     public class SocketFrameHandler : IFrameHandler
     {
-        // ^^ System.Net.Sockets.SocketError doesn't exist in .NET 1.1
-
         // Timeout in seconds to wait for a clean socket close.
         public const int SOCKET_CLOSING_TIMEOUT = 1;
-        public const int WSAEWOULDBLOCK = 10035;
+        // Socket poll timeout in ms. If the socket does not
+        // become writeable in this amount of time, we throw
+        // an exception.
+        protected int m_writeableStateTimeout = 30000;
 
         public NetworkBinaryReader m_reader;
-        public TcpClient m_socket;
+        public ITcpClient m_socket;
         public NetworkBinaryWriter m_writer;
         private readonly object _semaphore = new object();
         private bool _closed;
 
         public SocketFrameHandler(AmqpTcpEndpoint endpoint,
-            Func<AddressFamily, TcpClient> socketFactory,
-            int timeout)
+            Func<AddressFamily, ITcpClient> socketFactory,
+            int connectionTimeout, int readTimeout, int writeTimeout)
         {
             Endpoint = endpoint;
             m_socket = null;
@@ -73,14 +75,14 @@ namespace RabbitMQ.Client.Impl
                 try
                 {
                     m_socket = socketFactory(AddressFamily.InterNetworkV6);
-                    Connect(m_socket, endpoint, timeout);
+                    Connect(m_socket, endpoint, connectionTimeout);
                 }
                 catch (ConnectFailureException) // could not connect using IPv6
                 {
                     m_socket = null;
                 }
-                    // Mono might raise a SocketException when using IPv4 addresses on
-                    // an OS that supports IPv6
+                // Mono might raise a SocketException when using IPv4 addresses on
+                // an OS that supports IPv6
                 catch (SocketException)
                 {
                     m_socket = null;
@@ -89,12 +91,12 @@ namespace RabbitMQ.Client.Impl
             if (m_socket == null)
             {
                 m_socket = socketFactory(AddressFamily.InterNetwork);
-                Connect(m_socket, endpoint, timeout);
+                Connect(m_socket, endpoint, connectionTimeout);
             }
 
             Stream netstream = m_socket.GetStream();
-            netstream.ReadTimeout = timeout;
-            netstream.WriteTimeout = timeout;
+            netstream.ReadTimeout  = readTimeout;
+            netstream.WriteTimeout = writeTimeout;
 
             if (endpoint.Ssl.Enabled)
             {
@@ -110,6 +112,8 @@ namespace RabbitMQ.Client.Impl
             }
             m_reader = new NetworkBinaryReader(new BufferedStream(netstream));
             m_writer = new NetworkBinaryWriter(new BufferedStream(netstream));
+
+            m_writeableStateTimeout = writeTimeout;
         }
 
         public AmqpTcpEndpoint Endpoint { get; set; }
@@ -134,14 +138,14 @@ namespace RabbitMQ.Client.Impl
             get { return ((IPEndPoint)LocalEndPoint).Port; }
         }
 
-        public int Timeout
+        public int ReadTimeout
         {
             set
             {
                 try
                 {
                     if (m_socket.Connected)
-                    {
+                    {                        
                         m_socket.ReceiveTimeout = value;
                     }
                 }
@@ -154,15 +158,40 @@ namespace RabbitMQ.Client.Impl
             }
         }
 
+        public int WriteTimeout
+        {
+            set
+            {
+                m_writeableStateTimeout = value;
+                m_socket.Client.SendTimeout = value;
+            }
+        }
+
         public void Close()
         {
             lock (_semaphore)
             {
                 if (!_closed)
                 {
-                    m_socket.LingerState = new LingerOption(true, SOCKET_CLOSING_TIMEOUT);
-                    m_socket.Close();
-                    _closed = true;
+                    try
+                    {
+                        try
+                        {
+                            
+                        } catch (ArgumentException _)
+                        {
+                            // ignore, we are closing anyway
+                        };
+                        m_socket.Close();
+                    }
+                    catch (Exception _)
+                    {
+                        // ignore, we are closing anyway
+                    }
+                    finally
+                    {
+                        _closed = true;
+                    }
                 }
             }
         }
@@ -202,12 +231,34 @@ namespace RabbitMQ.Client.Impl
         {
             lock (m_writer)
             {
+                m_socket.Client.Poll(m_writeableStateTimeout, SelectMode.SelectWrite);
                 frame.WriteTo(m_writer);
                 m_writer.Flush();
             }
         }
 
-        private void Connect(TcpClient socket, AmqpTcpEndpoint endpoint, int timeout)
+        public void WriteFrameSet(IList<Frame> frames)
+        {
+            lock (m_writer)
+            {
+                m_socket.Client.Poll(m_writeableStateTimeout, SelectMode.SelectWrite);
+                foreach(var f in frames)
+                {
+                    f.WriteTo(m_writer);
+                }
+                m_writer.Flush();
+            }
+        }
+
+        public void Flush()
+        {
+            lock (m_writer)
+            {
+                m_writer.Flush();
+            }
+        }
+
+        private void Connect(ITcpClient socket, AmqpTcpEndpoint endpoint, int timeout)
         {
             IAsyncResult ar = null;
             try

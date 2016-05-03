@@ -16,11 +16,6 @@
     <AssemblyName>unit-tests</AssemblyName>
     <TargetFrameworkVersion>$(PropTargetFramework)</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -50,7 +45,8 @@
   </PropertyGroup>
   <Target Name="ImportSSL" Condition="$(SSLAvail)">
     <!-- import cacert into certmgr -->
-    <Exec Command="CertMgr /add $(SSLCertsDir)/testca/cacert.cer /s root" />
+    <!-- <Exec Command="certmgr -c -add -s $(SSLCertsDir)\testca\cacert.cer -r localMachine Root" /> -->
+    <Exec Command="certutil -addstore Root $(SSLCertsDir)\testca\cacert.cer" />
   </Target>
   <!-- Decide whether we need to set TEMP under mono -->
   <PropertyGroup>
@@ -89,6 +85,7 @@
     <Compile Include="src\unit\TestAmqpUri.cs" />
     <Compile Include="src\unit\TestAuth.cs" />
     <Compile Include="src\unit\TestBasicGet.cs" />
+    <Compile Include="src\unit\TestBasicProperties.cs" />
     <Compile Include="src\unit\TestBatchingWorkPool.cs" />
     <Compile Include="src\unit\TestBlockingCell.cs" />
     <Compile Include="src\unit\TestBytesWireFormatting.cs" />
@@ -100,7 +97,9 @@
     <Compile Include="src\unit\TestConnectionRecovery.cs" />
     <Compile Include="src\unit\TestConnectionShutdown.cs" />
     <Compile Include="src\unit\TestConnectionWithBackgroundThreads.cs" />
+    <Compile Include="src\unit\TestInitialConnection.cs" />
     <Compile Include="src\unit\TestConsumerCancelNotify.cs" />
+    <Compile Include="src\unit\TestConsumerCount.cs" />
     <Compile Include="src\unit\TestConsumerExceptions.cs" />
     <Compile Include="src\unit\TestConsumerOperationDispatch.cs" />
     <Compile Include="src\unit\TestContentHeaderCodec.cs" />
@@ -110,10 +109,13 @@
     <Compile Include="src\unit\TestExtensions.cs" />
     <Compile Include="src\unit\TestFieldTableFormatting.cs" />
     <Compile Include="src\unit\TestFieldTableFormattingGeneric.cs" />
+    <Compile Include="src\unit\TestFloodPublishing.cs" />
+    <Compile Include="src\unit\TestHeartbeats.cs" />
     <Compile Include="src\unit\TestIntAllocator.cs" />
     <Compile Include="src\unit\TestInvalidAck.cs" />
     <Compile Include="src\unit\TestMainLoop.cs" />
     <Compile Include="src\unit\TestMapMessage.cs" />
+    <Compile Include="src\unit\TestMessageCount.cs" />
     <Compile Include="src\unit\TestMessagePatternsSubscription.cs" />
     <Compile Include="src\unit\TestMethodArgumentCodec.cs" />
     <Compile Include="src\unit\TestModelShutdown.cs" />
@@ -122,11 +124,13 @@
     <Compile Include="src\unit\TestPassiveDeclare.cs" />
     <Compile Include="src\unit\TestPropertiesClone.cs" />
     <Compile Include="src\unit\TestPublicationAddress.cs" />
+    <Compile Include="src\unit\TestPublisherConfirms.cs" />
     <Compile Include="src\unit\TestQueueDeclare.cs" />
     <Compile Include="src\unit\TestRecoverAfterCancel.cs" />
     <Compile Include="src\unit\TestSharedQueue.cs" />
     <Compile Include="src\unit\TestSsl.cs" />
     <Compile Include="src\unit\TestStreamWireFormatting.cs" />
+    <Compile Include="src\unit\TestSubscription.cs" />
     <Compile Include="src\unit\WireFormattingFixture.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (c) 2007-2016 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is Pivotal Software, Inc.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 #pragma warning disable 2002
@@ -63,6 +63,7 @@ namespace RabbitMQ.Client.Unit
         protected IModel Model;
 
         protected Encoding encoding = new UTF8Encoding();
+        public static TimeSpan RECOVERY_INTERVAL = TimeSpan.FromSeconds(2);
 
         [SetUp]
         public virtual void Init()
@@ -90,6 +91,54 @@ namespace RabbitMQ.Client.Unit
         protected virtual void ReleaseResources()
         {
             // no-op
+        }
+
+        //
+        // Connections
+        //
+
+        protected AutorecoveringConnection CreateAutorecoveringConnection()
+        {
+            return CreateAutorecoveringConnection(RECOVERY_INTERVAL);
+        }
+
+        protected AutorecoveringConnection CreateAutorecoveringConnection(IList<string> hostnames)
+        {
+            return CreateAutorecoveringConnection(RECOVERY_INTERVAL, hostnames);
+        }
+
+        protected AutorecoveringConnection CreateAutorecoveringConnection(TimeSpan interval)
+        {
+            var cf = new ConnectionFactory();
+            cf.AutomaticRecoveryEnabled = true;
+            cf.NetworkRecoveryInterval = interval;
+            return (AutorecoveringConnection)cf.CreateConnection();
+        }
+
+        protected AutorecoveringConnection CreateAutorecoveringConnection(TimeSpan interval, IList<string> hostnames)
+        {
+            var cf = new ConnectionFactory();
+            cf.AutomaticRecoveryEnabled = true;
+            // tests that use this helper will likely list unreachable hosts,
+            // make sure we time out quickly on those
+            cf.RequestedConnectionTimeout = 1000;
+            cf.NetworkRecoveryInterval = interval;
+            return (AutorecoveringConnection)cf.CreateConnection(hostnames);
+        }
+
+        protected AutorecoveringConnection CreateAutorecoveringConnectionWithTopologyRecoveryDisabled()
+        {
+            var cf = new ConnectionFactory();
+            cf.AutomaticRecoveryEnabled = true;
+            cf.TopologyRecoveryEnabled = false;
+            cf.NetworkRecoveryInterval = RECOVERY_INTERVAL;
+            return (AutorecoveringConnection)cf.CreateConnection();
+        }
+
+        protected IConnection CreateNonRecoveringConnection()
+        {
+            var cf = new ConnectionFactory();
+            return cf.CreateConnection();
         }
 
         //
@@ -320,6 +369,11 @@ namespace RabbitMQ.Client.Unit
             AssertShutdownError(args, Constants.PreconditionFailed);
         }
 
+        protected bool InitiatedByPeerOrLibrary(ShutdownEventArgs evt)
+        {
+            return !(evt.Initiator == ShutdownInitiator.Application);
+        }
+
         //
         // Concurrency
         //
@@ -348,11 +402,11 @@ namespace RabbitMQ.Client.Unit
             }
             else if (IsRunningOnMono())
             {
-                rabbitmqctlPath = "../../../../../../rabbitmq-server/scripts/rabbitmqctl";
+                rabbitmqctlPath = "../../../../../../rabbit/scripts/rabbitmqctl";
             }
             else
             {
-                rabbitmqctlPath = @"..\..\..\..\..\..\rabbitmq-server\scripts\rabbitmqctl.bat";
+                rabbitmqctlPath = @"..\..\..\..\..\..\rabbit\scripts\rabbitmqctl.bat";
             }
 
             return ExecCommand(rabbitmqctlPath, args);
@@ -372,7 +426,7 @@ namespace RabbitMQ.Client.Unit
         {
             var proc = new Process
             {
-                StartInfo = 
+                StartInfo =
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false
@@ -388,7 +442,7 @@ namespace RabbitMQ.Client.Unit
                 cmd  = ctl;
             } else {
                 cmd  = "cmd.exe";
-                args = "/c \"\"" + ctl + "\" -n rabbit@" + (Environment.GetEnvironmentVariable("COMPUTERNAME")) + " " + args + "\"";
+                args = "/c \"\"" + ctl + "\" " + args + "\"";
             }
 
             try {
@@ -553,6 +607,15 @@ namespace RabbitMQ.Client.Unit
         protected void Wait(ManualResetEvent latch, TimeSpan timeSpan)
         {
             Assert.IsTrue(latch.WaitOne(timeSpan), "waiting on a latch timed out");
+        }
+
+        //
+        // TLS
+        //
+
+        public static string CertificatesDirectory()
+        {
+            return Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
         }
     }
 

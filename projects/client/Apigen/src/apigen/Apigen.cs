@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (c) 2007-2016 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is Pivotal Software, Inc.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using System;
@@ -133,7 +133,7 @@ namespace RabbitMQ.Client.Apigen {
         public static string MangleClass(string name) {
             StringBuilder sb = new StringBuilder();
             foreach (String s in IdentifierParts(name)) {
-                sb.Append(Char.ToUpper(s[0]) + s.Substring(1).ToLower());
+                sb.Append(Char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant());
             }
             return sb.ToString();
         }
@@ -143,9 +143,9 @@ namespace RabbitMQ.Client.Apigen {
             bool useUpper = false;
             foreach (String s in IdentifierParts(name)) {
                 if (useUpper) {
-                    sb.Append(Char.ToUpper(s[0]) + s.Substring(1).ToLower());
+                    sb.Append(Char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant());
                 } else {
-                    sb.Append(s.ToLower());
+                    sb.Append(s.ToLowerInvariant());
                     useUpper = true;
                 }
             }
@@ -340,7 +340,7 @@ namespace RabbitMQ.Client.Apigen {
             EmitLine("// The APL v2.0:");
             EmitLine("//");
             EmitLine("//---------------------------------------------------------------------------");
-            EmitLine("//   Copyright (C) 2007-2014 GoPivotal, Inc.");
+            EmitLine("//   Copyright (c) 2007-2016 Pivotal Software, Inc.");
             EmitLine("//");
             EmitLine("//   Licensed under the Apache License, Version 2.0 (the \"License\");");
             EmitLine("//   you may not use this file except in compliance with the License.");
@@ -370,8 +370,8 @@ namespace RabbitMQ.Client.Apigen {
             EmitLine("//");
             EmitLine("//   The Original Code is RabbitMQ.");
             EmitLine("//");
-            EmitLine("//   The Initial Developer of the Original Code is GoPivotal, Inc.");
-            EmitLine("//   Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.");
+            EmitLine("//   The Initial Developer of the Original Code is Pivotal Software, Inc.");
+            EmitLine("//   Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.");
             EmitLine("//---------------------------------------------------------------------------");
             EmitLine("");
             EmitLine("using RabbitMQ.Client;");

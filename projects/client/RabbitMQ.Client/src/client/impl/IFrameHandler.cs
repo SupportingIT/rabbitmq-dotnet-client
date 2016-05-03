@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (c) 2007-2016 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -34,11 +34,12 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is Pivotal Software, Inc.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace RabbitMQ.Client.Impl
@@ -47,16 +48,23 @@ namespace RabbitMQ.Client.Impl
     {
         AmqpTcpEndpoint Endpoint { get; }
 
+#if !NETFX_CORE
         EndPoint LocalEndPoint { get; }
+#endif
 
         int LocalPort { get; }
 
+#if !NETFX_CORE
         EndPoint RemoteEndPoint { get; }
+#endif
 
         int RemotePort { get; }
 
         ///<summary>Socket read timeout, in milliseconds. Zero signals "infinity".</summary>
-        int Timeout { set; }
+        int ReadTimeout { set; }
+
+        ///<summary>Socket write timeout, in milliseconds. Zero signals "infinity".</summary>
+        int WriteTimeout { set; }
 
         void Close();
 
@@ -68,5 +76,9 @@ namespace RabbitMQ.Client.Impl
         void SendHeader();
 
         void WriteFrame(Frame frame);
+
+        void WriteFrameSet(IList<Frame> frames);
+
+        void Flush();
     }
 }

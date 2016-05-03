@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (c) 2007-2016 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is Pivotal Software, Inc.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using NUnit.Framework;
@@ -44,19 +44,12 @@ using RabbitMQ.Client.Exceptions;
 using System;
 using System.Net.Security;
 using System.Security.Authentication;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Exceptions;
 
 namespace RabbitMQ.Client.Unit
 {
     [TestFixture]
     public class TestSsl
     {
-        public static string CertificatesDirectory()
-        {
-            return Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
-        }
-
         public void SendReceive(ConnectionFactory cf)
         {
             using (IConnection conn = cf.CreateConnection())
@@ -83,7 +76,7 @@ namespace RabbitMQ.Client.Unit
         [Test]
         public void TestServerVerifiedIgnoringNameMismatch()
         {
-            string sslDir = CertificatesDirectory();
+            string sslDir = IntegrationFixture.CertificatesDirectory();
             if (null == sslDir)
             {
                 Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
@@ -92,7 +85,11 @@ namespace RabbitMQ.Client.Unit
 
             ConnectionFactory cf = new ConnectionFactory();
             cf.Ssl.ServerName = "*";
+
+#if !(NETFX_CORE)
             cf.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateNameMismatch;
+#endif
+
             cf.Ssl.Enabled = true;
             SendReceive(cf);
         }
@@ -100,7 +97,7 @@ namespace RabbitMQ.Client.Unit
         [Test]
         public void TestServerVerified()
         {
-            string sslDir = CertificatesDirectory();
+            string sslDir = IntegrationFixture.CertificatesDirectory();
             if (null == sslDir)
             {
                 Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
@@ -113,10 +110,11 @@ namespace RabbitMQ.Client.Unit
             SendReceive(cf);
         }
 
+#if !NETFX_CORE
         [Test]
         public void TestVersionVerified()
         {
-            string sslDir = CertificatesDirectory();
+            string sslDir = IntegrationFixture.CertificatesDirectory();
             if (null == sslDir)
             {
                 Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
@@ -133,11 +131,12 @@ namespace RabbitMQ.Client.Unit
             cf.Ssl.Version = SslProtocols.Default;
             Assert.DoesNotThrow(() => SendReceive(cf));
         }
+#endif
 
         [Test]
         public void TestClientAndServerVerified()
         {
-            string sslDir = CertificatesDirectory();
+            string sslDir = IntegrationFixture.CertificatesDirectory();
             if (null == sslDir)
             {
                 Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
@@ -159,7 +158,7 @@ namespace RabbitMQ.Client.Unit
         [Test]
         public void TestNoClientCertificate()
         {
-            string sslDir = CertificatesDirectory();
+            string sslDir = IntegrationFixture.CertificatesDirectory();
             if (null == sslDir)
             {
                 Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
@@ -169,12 +168,16 @@ namespace RabbitMQ.Client.Unit
             ConnectionFactory cf = new ConnectionFactory();
             cf.Ssl = new SslOption()
             {
-                Version = SslProtocols.Tls,
-                AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateNotAvailable |
-                                         SslPolicyErrors.RemoteCertificateNameMismatch,
                 CertPath = null,
                 Enabled = true,
             };
+
+#if !NETFX_CORE
+            cf.Ssl.Version = SslProtocols.Tls;
+            cf.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateNotAvailable |
+                                        SslPolicyErrors.RemoteCertificateNameMismatch;
+#endif
+
             SendReceive(cf);
         }
     }
